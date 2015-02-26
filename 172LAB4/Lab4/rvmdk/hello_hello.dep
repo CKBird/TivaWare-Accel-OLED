@@ -1,5 +1,5 @@
 Dependencies for Project 'hello', Target 'hello': (DO NOT MODIFY !)
-F (.\hello.c)(0x54EE7066)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O2 --apcs=interwork --split_sections -IC:\ti\TivaWare_C_Series-1.1 --c99-I C:\Keil_v5\ARM\RV31\INC-I C:\Keil_v5\ARM\CMSIS\Include-I C:\Keil_v5\ARM\Inc\Luminary-D__UVISION_VERSION="513" -Drvmdk -DPART_TM4C123GH6PM -DTARGET_IS_BLIZZARD_RB1-o .\rvmdk\hello.o --omf_browse .\rvmdk\hello.crf --depend .\rvmdk\hello.d)
+F (.\hello.c)(0x54EE92F6)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O2 --apcs=interwork --split_sections -IC:\ti\TivaWare_C_Series-1.1 --c99-I C:\Keil_v5\ARM\RV31\INC-I C:\Keil_v5\ARM\CMSIS\Include-I C:\Keil_v5\ARM\Inc\Luminary-D__UVISION_VERSION="513" -Drvmdk -DPART_TM4C123GH6PM -DTARGET_IS_BLIZZARD_RB1-o .\rvmdk\hello.o --omf_browse .\rvmdk\hello.crf --depend .\rvmdk\hello.d)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5476D400)
 I (C:\Keil_v5\ARM\ARMCC\include\stdbool.h)(0x5476D400)
 I (C:\ti\TivaWare_C_Series-1.1\inc\tm4c123gh6pm.h)(0x54AC3774)
@@ -42,7 +42,7 @@ I (C:\ti\TivaWare_C_Series-1.1\driverlib\sysctl.h)(0x54AC3770)
 I (C:\ti\TivaWare_C_Series-1.1\driverlib\uart.h)(0x54AC3770)
 I (C:\ti\TivaWare_C_Series-1.1\utils\uartstdio.h)(0x54AC3779)
 F (.\Adafruit_GFX.h)(0x54DBEA20)()
-F (.\Adafruit_GFX.c)(0x54EE497E)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O2 --apcs=interwork --split_sections -IC:\ti\TivaWare_C_Series-1.1 --c99-I C:\Keil_v5\ARM\RV31\INC-I C:\Keil_v5\ARM\CMSIS\Include-I C:\Keil_v5\ARM\Inc\Luminary-D__UVISION_VERSION="513" -Drvmdk -DPART_TM4C123GH6PM -DTARGET_IS_BLIZZARD_RB1-o .\rvmdk\adafruit_gfx.o --omf_browse .\rvmdk\adafruit_gfx.crf --depend .\rvmdk\adafruit_gfx.d)
+F (.\Adafruit_GFX.c)(0x54EE7C1C)(-c --cpu Cortex-M4.fp -D__EVAL -D__MICROLIB -g -O2 --apcs=interwork --split_sections -IC:\ti\TivaWare_C_Series-1.1 --c99-I C:\Keil_v5\ARM\RV31\INC-I C:\Keil_v5\ARM\CMSIS\Include-I C:\Keil_v5\ARM\Inc\Luminary-D__UVISION_VERSION="513" -Drvmdk -DPART_TM4C123GH6PM -DTARGET_IS_BLIZZARD_RB1-o .\rvmdk\adafruit_gfx.o --omf_browse .\rvmdk\adafruit_gfx.crf --depend .\rvmdk\adafruit_gfx.d)
 I (C:\Keil_v5\ARM\ARMCC\include\stdbool.h)(0x5476D400)
 I (C:\Keil_v5\ARM\ARMCC\include\stdint.h)(0x5476D400)
 I (C:\Keil_v5\ARM\ARMCC\include\string.h)(0x5476D400)

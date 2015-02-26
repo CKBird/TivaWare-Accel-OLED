@@ -40,7 +40,7 @@ const uint8_t oc = GPIO_PIN_3;
 const uint8_t si = GPIO_PIN_5;
 
 //Port B pins (GPIO)
-const uint8_t rst = GPIO_PIN_3; //GPIO_PIN_5;
+const uint8_t rst = GPIO_PIN_5; //GPIO_PIN_5;
 const uint8_t dc = GPIO_PIN_6;
 
 

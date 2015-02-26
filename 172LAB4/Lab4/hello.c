@@ -72,12 +72,12 @@ void I2CAcc_Handler() { //KABOOOOOOOOOOOOM
   //If sampTicks is a certain amount, set print flags
 	GPIOIntClear(GPIO_PORTB_BASE, GPIO_INT_PIN_7);
 	
-	ROM_I2CMasterDataPut(I2C0_BASE, 0x00); //Mode Register
+	ROM_I2CMasterDataPut(I2C0_BASE, 0x01); //Mode Register
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
 	I2CMBusyLoop();
 	
 	x = ROM_I2CMasterDataGet(I2C0_BASE);
-	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
 	flag = 1;
 }
 
@@ -212,7 +212,7 @@ void testlines(uint16_t color) {
 void testdrawtext(char *text, uint16_t color) {
   setCursor(0,0);
   setTextColor(color);
-  UARTprintf(text);
+  //UARTprintf(text);
   int line = 0;
   for (int i=0; i<(strlen(text)); i++) {
     if((i%12) == 0)
@@ -303,7 +303,7 @@ void testroundrects() {
     w-=4;
     h-=6;
     color+=1100;
-    UARTprintf("%d", i);
+    //UARTprintf("%d", i);
   }
 }
 
@@ -413,10 +413,10 @@ void lcdTestPatternR(void)
 }
 
 void setup(void) {
-  UARTprintf("hello!\n");
+  UARTprintf("Start of Setup\n");
   begin();
 
-  UARTprintf("init\n");
+  //UARTprintf("init\n");
 
   //uint16_t time = 111;
   fillRect(0, 0, 128, 128, BLACK);
@@ -477,7 +477,7 @@ void setup(void) {
   testtriangles();
   ROM_SysCtlDelay(SysCtlClockGet()/6); //delay(500);
   
-  UARTprintf("done\n");
+  UARTprintf("Setup Complete\n");
   ROM_SysCtlDelay(SysCtlClockGet()/3); //delay(1000);
 }
 
@@ -485,7 +485,7 @@ int main (void)
 {
 	ROM_SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); 				
-  //ROM_GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_3); //RESET FOR OLED
+  ROM_GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_5); //RESET FOR OLED
 	ROM_GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_6);
   ROM_GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_7);
   ROM_GPIOPadConfigSet(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_STRENGTH_8MA, GPIO_PIN_TYPE_STD_WPU);    
@@ -546,7 +546,7 @@ int main (void)
 	{
 		//ROM_SysCtlSleep();
     if(flag == 1) {
-			UARTprintf("X Value: %d\n", x);
+			UARTprintf("Value: %d\n", x);
 				flag = 0;
 		}
 
