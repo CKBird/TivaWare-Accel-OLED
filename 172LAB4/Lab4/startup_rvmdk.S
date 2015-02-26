@@ -99,16 +99,16 @@ __Vectors
         DCD     IntDefaultHandler           ; Debug monitor handler
         DCD     0                           ; Reserved
         DCD     IntDefaultHandler           ; The PendSV handler
-        DCD     IntDefaultHandler				; The SysTick handler
+        DCD     IntDefaultHandler			; The SysTick handler
         DCD     IntDefaultHandler           ; GPIO Port A
-        DCD     IntDefaultHandler	        ; GPIO Port B
+        DCD     I2CAcc_Handler	        	; GPIO Port B
         DCD     IntDefaultHandler           ; GPIO Port C
         DCD     IntDefaultHandler           ; GPIO Port D
         DCD     IntDefaultHandler           ; GPIO Port E
         DCD     IntDefaultHandler           ; UART0 Rx and Tx
         DCD     IntDefaultHandler 	        ; UART1 Rx and Tx
         DCD     IntDefaultHandler           ; SSI0 Rx and Tx
-        DCD     I2CAcc_Handler           ; I2C0 Master and Slave
+        DCD     IntDefaultHandler           ; I2C0 Master and Slave
         DCD     IntDefaultHandler           ; PWM Fault
         DCD     IntDefaultHandler           ; PWM Generator 0
         DCD     IntDefaultHandler           ; PWM Generator 1

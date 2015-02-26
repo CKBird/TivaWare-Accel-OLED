@@ -46,7 +46,7 @@
 #define DEFAULTX1 0
 #define DEFAULTY1 69
 
-#define SLAVE_ADDRESS 0x3C
+#define SLAVE_ADDRESS 0x4C
 
 float p = 3.14159;
 
@@ -59,22 +59,31 @@ volatile int16_t drawX = 0;
 volatile int16_t drawY = 5;
 volatile int16_t drawX1 = 0;
 volatile int16_t drawY1 = 69;
+volatile int flag = 0;
+
+void I2CMBusyLoop() {
+	while(ROM_I2CMasterBusy(I2C0_BASE)) {}
+}
 
 void I2CAcc_Handler() { //KABOOOOOOOOOOOOM
   //When PB7 (/INT) is asserted
   //Read XYZ from registers
   //Increment sampTicks
   //If sampTicks is a certain amount, set print flags
-	writeChar('G', WHITE);
-}
-
-void I2CMBusyLoop() {
-  while(ROM_I2CMasterBusy(I2C0_BASE)){}
+	GPIOIntClear(GPIO_PORTB_BASE, GPIO_INT_PIN_7);
+	
+	ROM_I2CMasterDataPut(I2C0_BASE, 0x00); //Mode Register
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+	I2CMBusyLoop();
+	
+	x = ROM_I2CMasterDataGet(I2C0_BASE);
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+	flag = 1;
 }
 
 void ConfigureI2C() {
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_I2C0);
-  //ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); //Done in main()
+  ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); 
   ROM_GPIOPinConfigure(GPIO_PB2_I2C0SCL);
   ROM_GPIOPinConfigure(GPIO_PB3_I2C0SDA);
   ROM_GPIOPinTypeI2CSCL(GPIO_PORTB_BASE, GPIO_PIN_2);
@@ -82,10 +91,6 @@ void ConfigureI2C() {
 
   //Set up master and slave
   ROM_I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), false);
-  I2CSlaveEnable(I2C0_BASE);
-
-  //Set up slave address
-  I2CSlaveInit(I2C0_BASE, SLAVE_ADDRESS);
   ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, false);
 }
 
@@ -146,7 +151,7 @@ void ConfigureSSI (void) {
 	GPIOPinConfigure(GPIO_PA5_SSI0TX);
 
 	//Configure pins for SSI
-	ROM_GPIOPinTypeSSI(GPIO_PORTA_BASE, GPIO_PIN_5 | GPIO_PIN_3 | GPIO_PIN_2);
+	ROM_GPIOPinTypeSSI(GPIO_PORTA_BASE, GPIO_PIN_5 | GPIO_PIN_4 | GPIO_PIN_3 | GPIO_PIN_2);
 
 	//Set to master mode (SPI), 8 bit data
 	ROM_SSIConfigSetExpClk(SSI0_BASE, SysCtlClockGet(), SSI_FRF_MOTO_MODE_0, SSI_MODE_MASTER, 1000000, 8);
@@ -480,26 +485,27 @@ int main (void)
 {
 	ROM_SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
   ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); 				
-  ROM_GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_4); //RESET FOR OLED
+  //ROM_GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_3); //RESET FOR OLED
 	ROM_GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_6);
-  ROM_GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_7 );
-      
+  ROM_GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_7);
+  ROM_GPIOPadConfigSet(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_STRENGTH_8MA, GPIO_PIN_TYPE_STD_WPU);    
+	
   //Configure chosen pin for interrupts
   ROM_GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_RISING_EDGE); //INT is rising or falling edge? ); 
-
+	
   //Enable interrupts (on pin, port, and master)
   GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_7);
   ROM_IntEnable(INT_GPIOB); 
   ROM_IntMasterEnable();
   
 	ConfigureUART0();
-	UARTprintf("Turning on now\n");
+	UARTprintf("System Boot...\n");
   ConfigureSSI();
   ConfigureI2C();
-	
   begin(); //Initializes the OLED for use
-  setup(); //Runs the tests
-  lcdTestPattern();
+	//setup(); //Runs the tests
+  
+	lcdTestPattern();
   ROM_SysCtlDelay(SysCtlClockGet()/6); //delay(500);
   
   initHW();
@@ -508,20 +514,41 @@ int main (void)
 
   //Set sampling rate for accelerometer to 64 MHz
   //Begin by sending Sample Rate Register (0x08)
-  ROM_I2CMasterDataPut(I2C0_BASE, 0x08); 
-  ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+	ROM_I2CMasterDataPut(I2C0_BASE, 0x08); 
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
   I2CMBusyLoop();
-  //Then configure it for 64 MHz (001 in the lowest 3 bits)
-  ROM_I2CMasterDataPut(I2C0_BASE, 0x01);
-  ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
-  I2CMBusyLoop();
-
-
+		
+	//Then configure it for 64 MHz (001 in the lowest 3 bits)
+  ROM_I2CMasterDataPut(I2C0_BASE, 0x61); //Sampling Rate
+  ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
+	I2CMBusyLoop();
+	
+	ROM_I2CMasterDataPut(I2C0_BASE, 0x06); //Int Mode Register
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+	I2CMBusyLoop();
+	
+	ROM_I2CMasterDataPut(I2C0_BASE, 0x10);
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
+	I2CMBusyLoop();
+	
+	ROM_I2CMasterDataPut(I2C0_BASE, 0x07); //Mode Register
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+	I2CMBusyLoop();
+	
+	ROM_I2CMasterDataPut(I2C0_BASE, 0x01);
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
+	I2CMBusyLoop();
+	
+	UARTprintf("Configuration Done\n");
+	
+	//ROM_IntMasterEnable();
   while(1)
 	{
-		ROM_SysCtlSleep();
-    // REMEMBER THIS --- GPIOIntDisable(GPIO_PORTB_BASE, GPIO_PIN_7); 
+		//ROM_SysCtlSleep();
+    if(flag == 1) {
+			UARTprintf("X Value: %d\n", x);
+				flag = 0;
+		}
 
   }
 }
-
