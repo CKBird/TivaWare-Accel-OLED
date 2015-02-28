@@ -60,25 +60,46 @@ volatile int16_t drawY = 5;
 volatile int16_t drawX1 = 0;
 volatile int16_t drawY1 = 69;
 volatile int flag = 0;
+volatile int ticks = 0;
 
 void I2CMBusyLoop() {
 	while(ROM_I2CMasterBusy(I2C0_BASE)) {}
 }
 
 void I2CAcc_Handler() { //KABOOOOOOOOOOOOM
-  //When PB7 (/INT) is asserted
-  //Read XYZ from registers
-  //Increment sampTicks
-  //If sampTicks is a certain amount, set print flags
-	GPIOIntClear(GPIO_PORTB_BASE, GPIO_INT_PIN_7);
+  GPIOIntClear(GPIO_PORTB_BASE, GPIO_INT_PIN_7);
+	IntMasterDisable();
+	
+	ROM_I2CMasterDataPut(I2C0_BASE, 0x00); //Mode Register
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+	I2CMBusyLoop();
+	
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+	I2CMBusyLoop();
+  x = ROM_I2CMasterDataGet(I2C0_BASE);
+	I2CMBusyLoop();
 	
 	ROM_I2CMasterDataPut(I2C0_BASE, 0x01); //Mode Register
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
 	I2CMBusyLoop();
 	
-	x = ROM_I2CMasterDataGet(I2C0_BASE);
-	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+	I2CMBusyLoop();
+  y = ROM_I2CMasterDataGet(I2C0_BASE);
+	I2CMBusyLoop();
+	
+	ROM_I2CMasterDataPut(I2C0_BASE, 0x02); //Mode Register
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+	I2CMBusyLoop();
+	
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+	I2CMBusyLoop();
+  z = ROM_I2CMasterDataGet(I2C0_BASE);
+	I2CMBusyLoop();
+	
 	flag = 1;
+	ticks++;
+	IntMasterEnable();
 }
 
 void ConfigureI2C() {
@@ -90,8 +111,8 @@ void ConfigureI2C() {
   ROM_GPIOPinTypeI2C(GPIO_PORTB_BASE, GPIO_PIN_3); //SDA
 
   //Set up master and slave
-  ROM_I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), false);
-  ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, false);
+  ROM_I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), true);
+  ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, true);
 }
 
 void updateDraw(void)
@@ -491,7 +512,7 @@ int main (void)
   ROM_GPIOPadConfigSet(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_STRENGTH_8MA, GPIO_PIN_TYPE_STD_WPU);    
 	
   //Configure chosen pin for interrupts
-  ROM_GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_RISING_EDGE); //INT is rising or falling edge? ); 
+  ROM_GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_FALLING_EDGE); //INT is rising or falling edge? ); 
 	
   //Enable interrupts (on pin, port, and master)
   GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_7);
@@ -519,7 +540,7 @@ int main (void)
   I2CMBusyLoop();
 		
 	//Then configure it for 64 MHz (001 in the lowest 3 bits)
-  ROM_I2CMasterDataPut(I2C0_BASE, 0x61); //Sampling Rate
+  ROM_I2CMasterDataPut(I2C0_BASE, 0x00); //0x61 Sampling Rate
   ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
 	I2CMBusyLoop();
 	
@@ -538,6 +559,16 @@ int main (void)
 	ROM_I2CMasterDataPut(I2C0_BASE, 0x01);
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
 	I2CMBusyLoop();
+	/*
+	ROM_I2CMasterDataPut(I2C0_BASE, 0x04);
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+	I2CMBusyLoop();
+	
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+	I2CMBusyLoop();
+  y = ROM_I2CMasterDataGet(I2C0_BASE);
+	UARTprintf("Y Value: %u", y);
+	*/
 	
 	UARTprintf("Configuration Done\n");
 	
@@ -545,10 +576,27 @@ int main (void)
   while(1)
 	{
 		//ROM_SysCtlSleep();
-    if(flag == 1) {
-			UARTprintf("Value: %d\n", x);
+    if(flag == 1 && (ticks % 50 == 0)) {
+			x = x << 2;
+			y = y << 2;
+			z = z << 2;
+			
+			x = x >> 2;
+			y = y >> 2;
+			z = z >> 2;
+			
+			x = x - 1;
+			y = y - 1;
+			z = z - 1;
+			
+			x = ~x;
+			y = ~y;
+			z = ~z;
+			
+			UARTprintf("X Value: %d\n", x);
+			UARTprintf("Y Value: %d\n", y);
+			UARTprintf("Z Value: %d\n", z);
 				flag = 0;
 		}
-
   }
 }
