@@ -1,6 +1,5 @@
-//LOCAL PROCESSOR IS CONNECTED TO ACCEL
-//SENDS DATA TO REMOTE TO UPDATE BALL
-
+//REMOTE PROCESSOR ONLY RECEIVES BALL COORDINATES
+//DRAWS BALL ON SCREEN AND WAITS
 #include "stdint.h"
 #include "stdbool.h"
 #include "inc/tm4c123gh6pm.h"
@@ -75,8 +74,28 @@ volatile int BALLY = 64;  //Y-Coord
 volatile int dx = 0;      //X Direction
 volatile int dy = 0;      //Y Direction
 
+void UART1IntHandler()
+{
+  uint32_t ui32Status;
 
-void I2CMBusyLoop() {
+  ui32Status = ROM_UARTIntStatus(UART1_BASE, true);
+  ROM_UARTIntClear(UART1_BASE, ui32Status);
+  while(ROM_UARTCharsAvail(UART1_BASE)) 
+  {
+    char input = ROM_UARTCharGet(UART1_BASE);
+    if (input == 'c') 
+    {
+      fillCircle(ballX, ballY, RADIUS, BLACK);
+      
+      //Then update coords and draw new ball
+      ballX = ROM_UARTCharGet(UART1_BASE);  //x-coordinate
+      ballY = ROM_UARTCharGet(UART1_BASE);  //y-coordinate always follows right after x-coordinate
+      fillCircle(ballX, ballY, RADIUS, WHITE);
+    }
+  }
+}
+
+/*void I2CMBusyLoop() {
 	while(ROM_I2CMasterBusy(I2C0_BASE)) {}
 }
 
@@ -160,7 +179,7 @@ void updateBall (void) {
     dy = 0;     //Instead of bouncing off, just change y-direction to 0
   else if(ballX >= (RIGHTEDGE-RADIUS) || ballX <= (LEFTEDGE+RADIUS))
     dx = 0;     //Instead reset, just change x-direction to 0
-}
+}*/
 
 void updateDraw(void)
 {
@@ -569,7 +588,7 @@ int main (void)
 	ConfigureUART0();
 	UARTprintf("System Boot...\n");
   ConfigureSSI();
-  ConfigureI2C();
+  //ConfigureI2C();
   begin(); //Initializes the OLED for use
 	//setup(); //Runs the tests
   
@@ -582,7 +601,9 @@ int main (void)
 
   //Set sampling rate for accelerometer to 64 MHz
   //Begin by sending Sample Rate Register (0x08)
-	ROM_I2CMasterDataPut(I2C0_BASE, 0x08); 
+	/*
+
+  ROM_I2CMasterDataPut(I2C0_BASE, 0x08); 
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
   I2CMBusyLoop();
 		
@@ -606,7 +627,7 @@ int main (void)
 	ROM_I2CMasterDataPut(I2C0_BASE, 0x01);
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
 	I2CMBusyLoop();
-	/*
+
 	ROM_I2CMasterDataPut(I2C0_BASE, 0x04);
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
 	I2CMBusyLoop();
@@ -615,15 +636,16 @@ int main (void)
 	I2CMBusyLoop();
   y = ROM_I2CMasterDataGet(I2C0_BASE);
 	UARTprintf("Y Value: %u", y);
-	*/
+  */
 	
 	UARTprintf("Configuration Done\n");
 	
 	//ROM_IntMasterEnable();
   while(1)
 	{
-		//ROM_SysCtlSleep();
-    if(flag == 1 && (ticks % 50 == 0)) {
+    //Do nothing until UART1 int is received, then update ball.
+		ROM_SysCtlSleep();
+    /*if(flag == 1 && (ticks % 50 == 0)) {
 			x = x << 2;
 			y = y << 2;
 			z = z << 2;
@@ -647,11 +669,9 @@ int main (void)
       //Normalize values here based on flat setting.
       //After getting values, normalize to (0, 0, 1.5)
 
-      /*
       x = x - Some Value;
       y = y - Some Value;
-      z = z + Same Value; //Determine "some value" based on flat table readings.
-      */
+      z = z + Same Value; //Determine "some value" based on flat table readings
 
       if(a == 1)
         x = x * -1;
@@ -666,6 +686,7 @@ int main (void)
 
       updateBall();
 			flag = 0;
+      */
 		}
   }
 }
