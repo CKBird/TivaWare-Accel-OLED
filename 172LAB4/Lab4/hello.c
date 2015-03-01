@@ -62,6 +62,13 @@ volatile int16_t drawY1 = 69;
 volatile int flag = 0;
 volatile int ticks = 0;
 
+//Ball Variables
+volatile int BALLX = 64;  //X-Coord
+volatile int BALLY = 64;  //Y-Coord
+volatile int dx = 3;      //X Direction
+volatile int dy = 2;      //Y Direction
+
+
 void I2CMBusyLoop() {
 	while(ROM_I2CMasterBusy(I2C0_BASE)) {}
 }
@@ -113,6 +120,37 @@ void ConfigureI2C() {
   //Set up master and slave
   ROM_I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), true);
   ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, true);
+}
+
+void updateBall (void) { //MUST STILL CREATE BALLX, BALLY
+  //Erase old ball
+  fillCircle(ballX, ballY, RADIUS, BLACK);
+  
+  //Update coordinates and draw new ball
+  ballX += dx;
+  ballY += dy;
+  fillCircle(ballX, ballY, RADIUS, WHITE);
+
+  ROM_UARTCharPut(UART1_BASE, 'c');
+  ROM_UARTCharPut(UART1_BASE, ballX);
+  ROM_UARTCharPut(UART1_BASE, ballY);
+  
+  if(x < 0)
+    dx = -3;
+  else if(x > 0)
+    dx = 3;
+
+  if(y < 0)
+    dy = -3;
+  else if(x > 0)
+    dy = 3;
+
+  //Z Coordinate doesn't matter (is up or down)
+  
+  if ( ballY <= TOPEDGE+RADIUS || ballY >= BOTTOMEDGE-RADIUS )
+    dy = 0;     //Instead of bouncing off, just change y-direction change to 0
+  else if ( ballX >= RIGHTEDGE-RADIUS || ballX <= LEFTEDGE+RADIUS)
+    dx = 0;     //Instead reset, just change x-direction change to 0
 }
 
 void updateDraw(void)
