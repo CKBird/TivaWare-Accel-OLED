@@ -63,10 +63,14 @@ volatile int flag = 0;
 volatile int ticks = 0;
 
 //Ball Variables
+//WE WILL ASSUME THAT -32 < X < 31
+//''        ''        -32 < Y < 31
+//If value is < 0, ball rolls left
+//If value is > 0, ball rolls right
 volatile int BALLX = 64;  //X-Coord
 volatile int BALLY = 64;  //Y-Coord
-volatile int dx = 3;      //X Direction
-volatile int dy = 2;      //Y Direction
+volatile int dx = 0;      //X Direction
+volatile int dy = 0;      //Y Direction
 
 
 void I2CMBusyLoop() {
@@ -122,10 +126,20 @@ void ConfigureI2C() {
   ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, true);
 }
 
-void updateBall (void) { //MUST STILL CREATE BALLX, BALLY
+void updateBall (void) {
   //Erase old ball
   fillCircle(ballX, ballY, RADIUS, BLACK);
   
+    if(x < 0)
+    dx = -3;
+  else if(x > 0)
+    dx = 3;
+
+  if(y < 0)
+    dy = -3;
+  else if(y > 0)
+    dy = 3;
+
   //Update coordinates and draw new ball
   ballX += dx;
   ballY += dy;
@@ -134,23 +148,13 @@ void updateBall (void) { //MUST STILL CREATE BALLX, BALLY
   ROM_UARTCharPut(UART1_BASE, 'c');
   ROM_UARTCharPut(UART1_BASE, ballX);
   ROM_UARTCharPut(UART1_BASE, ballY);
-  
-  if(x < 0)
-    dx = -3;
-  else if(x > 0)
-    dx = 3;
-
-  if(y < 0)
-    dy = -3;
-  else if(x > 0)
-    dy = 3;
 
   //Z Coordinate doesn't matter (is up or down)
-  
-  if ( ballY <= TOPEDGE+RADIUS || ballY >= BOTTOMEDGE-RADIUS )
-    dy = 0;     //Instead of bouncing off, just change y-direction change to 0
-  else if ( ballX >= RIGHTEDGE-RADIUS || ballX <= LEFTEDGE+RADIUS)
-    dx = 0;     //Instead reset, just change x-direction change to 0
+
+  if ( ballY <= (TOPEDGE+RADIUS) || ballY >= (BOTTOMEDGE-RADIUS))
+    dy = 0;     //Instead of bouncing off, just change y-direction to 0
+  else if ( ballX >= (RIGHTEDGE-RADIUS) || ballX <= (LEFTEDGE+RADIUS))
+    dx = 0;     //Instead reset, just change x-direction to 0
 }
 
 void updateDraw(void)
@@ -196,7 +200,7 @@ void ConfigureUART0(void)// Same as ConfigureUART()
     
     UARTClockSourceSet(UART0_BASE, UART_CLOCK_PIOSC);
 
-    UARTStdioConfig(0, 115200, 16000000);
+    UARTStdioConfig(0, 9600, 16000000);
 }
 
 void ConfigureSSI (void) {
@@ -623,6 +627,23 @@ int main (void)
 			y = y >> 2;
 			z = z >> 2;
 			
+      int a = x >> 5;
+      int b = y >> 5;
+      int c = z >> 5;
+
+      if(a == 1)
+        //x is positive
+      else
+        //x is negative
+      if(b == 1)
+        //y is positive
+      else
+        //y is negative      
+      if(c == 1)
+        //z is positive
+      else
+        //z is negative
+
 			x = x - 1;
 			y = y - 1;
 			z = z - 1;
