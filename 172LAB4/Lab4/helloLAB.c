@@ -1,5 +1,5 @@
 //LOCAL PROCESSOR IS CONNECTED TO ACCEL
-//SENDS DATA TO REMOTE TO UPDATE BALL
+//PLAYS LABYRINTH GAME ON LOCAL OLED
 
 #include "stdint.h"
 #include "stdbool.h"
@@ -158,7 +158,7 @@ void updateBall (void) {
 
   if(ballY <= (TOPEDGE+RADIUS) || ballY >= (BOTTOMEDGE-RADIUS))
     dy = 0;     //Instead of bouncing off, just change y-direction to 0
-  if(ballX >= (RIGHTEDGE-RADIUS) || ballX <= (LEFTEDGE+RADIUS))
+  else if(ballX >= (RIGHTEDGE-RADIUS) || ballX <= (LEFTEDGE+RADIUS))
     dx = 0;     //Instead reset, just change x-direction to 0
 }
 
