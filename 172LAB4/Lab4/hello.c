@@ -130,7 +130,7 @@ void updateBall (void) {
   //Erase old ball
   fillCircle(ballX, ballY, RADIUS, BLACK);
   
-    if(x < 0)
+  if(x < 0)
     dx = -3;
   else if(x > 0)
     dx = 3;
@@ -145,15 +145,17 @@ void updateBall (void) {
   ballY += dy;
   fillCircle(ballX, ballY, RADIUS, WHITE);
 
+  IntMasterDisable();
   ROM_UARTCharPut(UART1_BASE, 'c');
   ROM_UARTCharPut(UART1_BASE, ballX);
   ROM_UARTCharPut(UART1_BASE, ballY);
+  IntMasterEnable();
 
   //Z Coordinate doesn't matter (is up or down)
 
-  if ( ballY <= (TOPEDGE+RADIUS) || ballY >= (BOTTOMEDGE-RADIUS))
+  if(ballY <= (TOPEDGE+RADIUS) || ballY >= (BOTTOMEDGE-RADIUS))
     dy = 0;     //Instead of bouncing off, just change y-direction to 0
-  else if ( ballX >= (RIGHTEDGE-RADIUS) || ballX <= (LEFTEDGE+RADIUS))
+  else if(ballX >= (RIGHTEDGE-RADIUS) || ballX <= (LEFTEDGE+RADIUS))
     dx = 0;     //Instead reset, just change x-direction to 0
 }
 
@@ -625,37 +627,33 @@ int main (void)
 			
 			x = x >> 2;
 			y = y >> 2;
-			z = z >> 2;
-			
+			z = z >> 2; //These 6 ops cut off top 2 bits of all inputs
+
       int a = x >> 5;
       int b = y >> 5;
-      int c = z >> 5;
-
-      if(a == 1)
-        //x is positive
-      else
-        //x is negative
-      if(b == 1)
-        //y is positive
-      else
-        //y is negative      
-      if(c == 1)
-        //z is positive
-      else
-        //z is negative
+      int c = z >> 5; //abc hold only the x[5], y[5], z[5] for sign
 
 			x = x - 1;
 			y = y - 1;
 			z = z - 1;
 			
 			x = ~x;
-			y = ~y;
-			z = ~z;
-			
+			y = ~y; //int -> 2s comp is done by inversing and adding one
+			z = ~z; //2s -> int is done by subtracting one then inversing
+
+      if(a == 1)
+        x = x * -1;
+      if(b == 1)
+        y = y * -1;      
+      if(c == 1)
+        z = z * -1; //Change based on sign
+
 			UARTprintf("X Value: %d\n", x);
 			UARTprintf("Y Value: %d\n", y);
-			UARTprintf("Z Value: %d\n", z);
-				flag = 0;
+			UARTprintf("Z Value: %d\n", z); //These should be in range of -32 < x < 31
+
+      updateBall();
+			flag = 0;
 		}
   }
 }
