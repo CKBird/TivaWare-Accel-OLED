@@ -87,8 +87,7 @@ int dx = 0;      //X Direction
 int dy = 0;      //Y Direction
 
 //Maze Walls
-int VH = 0;
-int pxArr[4][4][2];
+bool pxArr[128][128];
 
 //Vertical Walls
 #define VW1     10
@@ -244,14 +243,10 @@ void updateBall (void) {
     dy = 0;     
   if(ballX >= (RIGHTEDGE-RADIUS) || ballX <= (LEFTEDGE+RADIUS)) //Instead reset, just change x-direction to 0
     dx = 0;     
-
-  //NEED TO CHANGE TO BIT READ ARRAY
-
-  if(pxArr[BALLX][BALLY+RADIUS][0] == 1 || pxArr[BALLX][BALLY-RADIUS][0] == 1) //Ball hits a vertical wall
+  if(pxArr[BALLX][BALLY+RADIUS] == 1 || pxArr[BALLX][BALLY-RADIUS] == 1) //Ball hits a vertical wall
     dy = 0;
-  if(pxArr[BALLX+RADIUS][BALLY][1] == 1 || pxArr[BALLX-RADIUS][BALLY][1] == 1) //Ball hits a horizontal wall
+  if(pxArr[BALLX+RADIUS][BALLY] == 1 || pxArr[BALLX-RADIUS][BALLY] == 1) //Ball hits a horizontal wall
     dx = 0;
-
 }
 
 void updateDraw(void)
@@ -676,14 +671,12 @@ int main (void)
 	{
 		for(int j = 0; j < 128; j++) 
 		{ 
-			for(int k = 0; k < 2; k++)
-				pxArr[i][j][k] = 0;
+			pxArr[i][j] = 0;
 		}
 	}
 
   //DRAW LAB HERE
   //DRAW VERTICAL LINES
-  VH = 0; //Tells it is vert line
   drawLine( VW1,   VW1L,   VW1 + 5,    50,   WHITE);
   drawLine( VW2,   VW2L,   VW2 + 5,    127,  WHITE);
   drawLine( VW3,   VW3L,   VW3 + 5,    120,  WHITE);
@@ -702,7 +695,6 @@ int main (void)
   drawLine( VW16,  VW16L,  VW16 + 5,   127,  WHITE);
 
   //DRAW HORIZONTAL LINES
-  VH = 1; //Tells it is horiz line
   drawLine( HW1L,  HW1,  60,   HW1 + 5,  WHITE);
   drawLine( HW2L,  HW2,  95,   HW2 + 5,  WHITE);
   drawLine( HW3L,  HW3,  120,  HW3 + 5,  WHITE);

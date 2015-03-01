@@ -22,8 +22,7 @@ uint8_t textsize, rotation;
 bool wrap; // If set, 'wrap' text at right edge of display
 
 //Maze Walls
-extern int VH;
-extern int pxArr[128][128][2];
+extern int pxArr[128][128];
 
 // Color definitions
 #define BLACK           0x0000
@@ -194,7 +193,7 @@ void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
         if(color == WHITE)
         {
           //Add Pixel to line array
-          pxArr[x0][y0][VH] = 1;
+          pxArr[x0][y0] = 1;
         }
     } 
     else 
@@ -203,7 +202,7 @@ void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
         if(color == WHITE)
         {
           //Add Pixel to line array
-          pxArr[x0][y0][VH] = 1;
+          pxArr[x0][y0] = 1;
         }
     }
     err -= dy;
