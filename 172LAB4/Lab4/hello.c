@@ -641,6 +641,15 @@ int main (void)
 			y = ~y; //int -> 2s comp is done by inversing and adding one
 			z = ~z; //2s -> int is done by subtracting one then inversing
 
+      //Normalize values here based on flat setting.
+      //After getting values, normalize to (0, 0, 1.5)
+
+      /*
+      x = x - Some Value;
+      y = y - Some Value;
+      z = z + Same Value; //Determine "some value" based on flat table readings.
+      */
+
       if(a == 1)
         x = x * -1;
       if(b == 1)
