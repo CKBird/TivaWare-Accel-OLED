@@ -1,5 +1,5 @@
 //LOCAL PROCESSOR IS CONNECTED TO ACCEL
-//SENDS DATA TO REMOTE TO UPDATE BALL
+//PLAYS LABYRINTH GAME ON LOCAL OLED
 
 #include "stdint.h"
 #include "stdbool.h"
@@ -65,16 +65,99 @@ volatile int16_t drawY1 = 69;
 volatile int flag = 0;
 volatile int ticks = 0;
 
+int ballX = 64;
+int ballY = 64;
+uint8_t ballX2;
+uint8_t ballY2;
+//Variables for determining screen, paddle, and ball boundaries
+#define TOPEDGE 0
+#define BOTTOMEDGE 128
+#define LEFTEDGE 0
+#define RIGHTEDGE 128
+#define RADIUS 4
+
 //Ball Variables
 //WE WILL ASSUME THAT -32 < X < 31
 //''        ''        -32 < Y < 31
 //If value is < 0, ball rolls left
 //If value is > 0, ball rolls right
-volatile int BALLX = 64;  //X-Coord
-volatile int BALLY = 64;  //Y-Coord
-volatile int dx = 0;      //X Direction
-volatile int dy = 0;      //Y Direction
+int BALLX = 64;  //X-Coord
+int BALLY = 64;  //Y-Coord
+int dx = 0;      //X Direction
+int dy = 0;      //Y Direction
 
+//Maze Walls
+bool pxArr[128][128];
+
+//Vertical Walls
+#define VW1     10
+#define VW1L    0 //50
+#define VW2     10
+#define VW2L    120 //127
+#define VW3     25
+#define VW3L    10 //120
+#define VW4     40
+#define VW4L    25 //55
+#define VW5     40
+#define VW5L    100 //127
+#define VW6     55
+#define VW6L    10 //40
+#define VW7     55
+#define VW7L    100 //127
+#define VW8     70
+#define VW8L    40 //55
+#define VW9     85
+#define VW9L    55 //70
+#define VW10    85
+#define VW10L   80 //120
+#define VW11    90
+#define VW11L   10 //45
+#define VW12    100
+#define VW12L   65 //100
+#define VW13    100
+#define VW13L   110 //127
+#define VW14    105
+#define VW14L   10 //55
+#define VW15    115
+#define VW15L   65 //127
+#define VW16    115
+#define VW16L   120 //127
+
+//Horizontal Walls
+#define HW1     10  
+#define HW1L    10 //60
+#define HW2     10
+#define HW2L    70 //95
+#define HW3     10  
+#define HW3L    105 //120
+#define HW4     25  
+#define HW4L    40 //80
+#define HW5     25  
+#define HW5L    105 //120
+#define HW6     40  
+#define HW6L    70 //95
+#define HW7     40  
+#define HW7L    120 //127
+#define HW8     50  
+#define HW8L    40 //75
+#define HW9     60 
+#define HW9L    10 //30
+#define HW10    65  
+#define HW10L   25 //120 
+#define HW11    75  
+#define HW11L   10 //30
+#define HW12    80  
+#define HW12L   40 //75
+#define HW13    85  
+#define HW13L   40 //75
+#define HW14    90  
+#define HW14L   0 //15
+#define HW15    100  
+#define HW15L   40 //75
+#define HW16    105  
+#define HW16L   10 //30
+#define HW17    115  
+#define HW17L   55 //90
 
 void I2CMBusyLoop() {
 	while(ROM_I2CMasterBusy(I2C0_BASE)) {}
@@ -122,7 +205,7 @@ void ConfigureI2C() {
   ROM_GPIOPinConfigure(GPIO_PB2_I2C0SCL);
   ROM_GPIOPinConfigure(GPIO_PB3_I2C0SDA);
   ROM_GPIOPinTypeI2CSCL(GPIO_PORTB_BASE, GPIO_PIN_2);
-  ROM_GPIOPinTypeI2C(GPIO_PORTB_BASE, GPIO_PIN_3); //SDA
+  ROM_GPIOPinTypeI2C(GPIO_PORTB_BASE, GPIO_PIN_3);    //SDA
 
   //Set up master and slave
   ROM_I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), true);
@@ -134,14 +217,14 @@ void updateBall (void) {
   fillCircle(ballX, ballY, RADIUS, BLACK);
   
   if(x < 0)
-    dx = -3;
+    dx = -1;
   else if(x > 0)
-    dx = 3;
+    dx = 1;
 
   if(y < 0)
-    dy = -3;
+    dy = -1;
   else if(y > 0)
-    dy = 3;
+    dy = 1;
 
   //Update coordinates and draw new ball
   ballX += dx;
@@ -156,10 +239,14 @@ void updateBall (void) {
 
   //Z Coordinate doesn't matter (is up or down)
 
-  if(ballY <= (TOPEDGE+RADIUS) || ballY >= (BOTTOMEDGE-RADIUS))
-    dy = 0;     //Instead of bouncing off, just change y-direction to 0
-  if(ballX >= (RIGHTEDGE-RADIUS) || ballX <= (LEFTEDGE+RADIUS))
-    dx = 0;     //Instead reset, just change x-direction to 0
+  if(ballY <= (TOPEDGE+RADIUS) || ballY >= (BOTTOMEDGE-RADIUS)) //Instead of bouncing off, just change y-direction to 0
+    dy = 0;     
+  if(ballX >= (RIGHTEDGE-RADIUS) || ballX <= (LEFTEDGE+RADIUS)) //Instead reset, just change x-direction to 0
+    dx = 0;     
+  if(pxArr[BALLX][BALLY+RADIUS] == 1 || pxArr[BALLX][BALLY-RADIUS] == 1) //Ball hits a vertical wall
+    dy = 0;
+  if(pxArr[BALLX+RADIUS][BALLY] == 1 || pxArr[BALLX-RADIUS][BALLY] == 1) //Ball hits a horizontal wall
+    dx = 0;
 }
 
 void updateDraw(void)
@@ -579,6 +666,53 @@ int main (void)
   initHW();
   setTextSize(1);
   fillScreen(BLACK);
+
+	for(int i = 0; i < 128; i++)
+	{
+		for(int j = 0; j < 128; j++) 
+		{ 
+			pxArr[i][j] = 0;
+		}
+	}
+
+  //DRAW LAB HERE
+  //DRAW VERTICAL LINES
+  drawLine( VW1,   VW1L,   VW1 + 5,    50,   WHITE);
+  drawLine( VW2,   VW2L,   VW2 + 5,    127,  WHITE);
+  drawLine( VW3,   VW3L,   VW3 + 5,    120,  WHITE);
+  drawLine( VW4,   VW4L,   VW4 + 5,    55,   WHITE);
+  drawLine( VW5,   VW5L,   VW5 + 5,    127,  WHITE);
+  drawLine( VW6,   VW6L,   VW6 + 5,    40,   WHITE);
+  drawLine( VW7,   VW7L,   VW7 + 5,    127,  WHITE);
+  drawLine( VW8,   VW8L,   VW8 + 5,    55,   WHITE);
+  drawLine( VW9,   VW9L,   VW9 + 5,    70,   WHITE);
+  drawLine( VW10,  VW10L,  VW10 + 5,   120,  WHITE);
+  drawLine( VW11,  VW11L,  VW11 + 5,   45,   WHITE);
+  drawLine( VW12,  VW12L,  VW12 + 5,   100,  WHITE);
+  drawLine( VW13,  VW13L,  VW13 + 5,   127,  WHITE);
+  drawLine( VW14,  VW14L,  VW14 + 5,   55,   WHITE);
+  drawLine( VW15,  VW15L,  VW15 + 5,   127,  WHITE);
+  drawLine( VW16,  VW16L,  VW16 + 5,   127,  WHITE);
+
+  //DRAW HORIZONTAL LINES
+  drawLine( HW1L,  HW1,  60,   HW1 + 5,  WHITE);
+  drawLine( HW2L,  HW2,  95,   HW2 + 5,  WHITE);
+  drawLine( HW3L,  HW3,  120,  HW3 + 5,  WHITE);
+  drawLine( HW4L,  HW4,  80,   HW4 + 5,  WHITE);
+  drawLine( HW5L,  HW5,  120,  HW5 + 5,  WHITE);
+  drawLine( HW6L,  HW6,  95,   HW6 + 5,  WHITE);
+  drawLine( HW7L,  HW7,  127,  HW7 + 5,  WHITE);
+  drawLine( HW8L,  HW8,  75,   HW8 + 5,  WHITE);
+  drawLine( HW9L,  HW9,  30,   HW9 + 5,  WHITE);
+  drawLine( HW10L, HW10, 120,  HW10 + 5, WHITE);
+  drawLine( HW11L, HW11, 30,   HW11 + 5, WHITE);
+  drawLine( HW12L, HW12, 75,   HW12 + 5, WHITE);
+  drawLine( HW13L, HW13, 75,   HW13 + 5, WHITE);
+  drawLine( HW14L, HW14, 15,   HW14 + 5, WHITE);
+  drawLine( HW15L, HW15, 75,   HW15 + 5, WHITE);
+  drawLine( HW16L, HW16, 30,   HW16 + 5, WHITE);
+  drawLine( HW17L, HW17, 90,   HW17 + 5, WHITE);
+
 
   //Set sampling rate for accelerometer to 64 MHz
   //Begin by sending Sample Rate Register (0x08)

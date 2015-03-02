@@ -21,6 +21,9 @@ uint16_t  textcolor, textbgcolor;
 uint8_t textsize, rotation;
 bool wrap; // If set, 'wrap' text at right edge of display
 
+//Maze Walls
+extern int pxArr[128][128];
+
 // Color definitions
 #define BLACK           0x0000
 #define BLUE            0x001F
@@ -158,6 +161,7 @@ void fillCircleHelper(int16_t x0, int16_t y0, int16_t r, uint8_t cornername, int
 
 // Bresenham's algorithm - thx wikpedia
 void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
+
   int16_t steep = abs(y1 - y0) > abs(x1 - x0);
   if (steep) {
     swap(x0, y0);
@@ -183,10 +187,23 @@ void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
   }
 
   for (; x0<=x1; x0++) {
-    if (steep) {
+    if (steep) 
+    {
       drawPixel(y0, x0, color);
-    } else {
+        if(color == WHITE)
+        {
+          //Add Pixel to line array
+          pxArr[x0][y0] = 1;
+        }
+    } 
+    else 
+    {
       drawPixel(x0, y0, color);
+        if(color == WHITE)
+        {
+          //Add Pixel to line array
+          pxArr[x0][y0] = 1;
+        }
     }
     err -= dy;
     if (err < 0) {
