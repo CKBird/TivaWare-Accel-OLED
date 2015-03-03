@@ -63,13 +63,13 @@ volatile int flag = 0;
 volatile int ticks = 0;
 
 //Variable Values
-volatile int8_t xs = 0;
-volatile int8_t ys = 0;
-volatile int8_t zs = 0;
-volatile uint32_t x = 0;
-volatile uint32_t y = 0;
-volatile uint32_t z = 0;
+volatile uint8_t x = 0;
+volatile uint8_t y = 0;
+volatile uint8_t z = 0;
 volatile int8_t xf = 0;
+volatile int8_t yf = 0;
+volatile int8_t zf = 0;
+
 //Ball Variables
 //WE WILL ASSUME THAT -32 < X < 31
 //''        ''        -32 < Y < 31
@@ -96,39 +96,51 @@ void I2CMBusyLoop() {
 }
 
 void I2CAcc_Handler() { //KABOOOOOOOOOOOOM
-  GPIOIntClear(GPIO_PORTB_BASE, GPIO_INT_PIN_7);
-	IntMasterDisable();
+	GPIOIntClear(GPIO_PORTB_BASE, GPIO_INT_PIN_7);
 	
+	ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, false);
 	ROM_I2CMasterDataPut(I2C0_BASE, 0x00); //Mode Register
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
 	I2CMBusyLoop();
 	
-	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+	ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, true);
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_RECEIVE_START);
 	I2CMBusyLoop();
   x = ROM_I2CMasterDataGet(I2C0_BASE);
-	I2CMBusyLoop();
+	//I2CMBusyLoop();
 	
-	ROM_I2CMasterDataPut(I2C0_BASE, 0x01); //Mode Register
-	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_RECEIVE_CONT);
 	I2CMBusyLoop();
+	y = ROM_I2CMasterDataGet(I2C0_BASE);
 	
-	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_RECEIVE_FINISH);
 	I2CMBusyLoop();
-  y = ROM_I2CMasterDataGet(I2C0_BASE);
-	I2CMBusyLoop();
+	z = ROM_I2CMasterDataGet(I2C0_BASE);
 	
-	ROM_I2CMasterDataPut(I2C0_BASE, 0x02); //Mode Register
-	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
-	I2CMBusyLoop();
+	//ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, false);
+	//ROM_I2CMasterDataPut(I2C0_BASE, 0x01); //Mode Register
+	//ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+	//I2CMBusyLoop();
 	
-	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
-	I2CMBusyLoop();
-  z = ROM_I2CMasterDataGet(I2C0_BASE);
-	I2CMBusyLoop();
+	//ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, true);
+	//ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+	//I2CMBusyLoop();
+  //y = ROM_I2CMasterDataGet(I2C0_BASE);
+	//I2CMBusyLoop();
+	
+	//ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, false);
+	//ROM_I2CMasterDataPut(I2C0_BASE, 0x02); //Mode Register
+	//ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
+	//I2CMBusyLoop();
+	
+	//ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, true);
+	//ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
+	//I2CMBusyLoop();
+  //z = ROM_I2CMasterDataGet(I2C0_BASE);
+	//I2CMBusyLoop();
 	
 	flag = 1;
 	ticks++;
-	IntMasterEnable();
 }
 
 void ConfigureI2C() {
@@ -140,37 +152,30 @@ void ConfigureI2C() {
   ROM_GPIOPinTypeI2C(GPIO_PORTB_BASE, GPIO_PIN_3); //SDA
 
   //Set up master and slave
-  ROM_I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), true);
-  ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, true);
+  ROM_I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), false);
+  //ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, false);
 }
 
 void updateBall (void) {
   //Erase old ball
   fillCircle(ballX, ballY, RADIUS, BLACK);
-  
-  if(xf < 0)
-    dx = -3;
-  else if(x > 0)
-    dx = 3;
-
-  /*if(y < 0)
-    dy = -3;
-  else if(y > 0)
-    dy = 3;
-*/
+	
+	dx = -(xf/5);
+  dy = yf/5;
+	
   //Update coordinates and draw new ball
   ballX += dx;
   ballY += dy;
   fillCircle(ballX, ballY, RADIUS, WHITE);
 
-  IntMasterDisable();
-  ROM_UARTCharPut(UART1_BASE, 'c');
-  ROM_UARTCharPut(UART1_BASE, ballX);
-  ROM_UARTCharPut(UART1_BASE, ballY);
-  IntMasterEnable();
+  //IntMasterDisable();
+  //ROM_UARTCharPut(UART1_BASE, 'c');
+  //ROM_UARTCharPut(UART1_BASE, ballX);
+  //ROM_UARTCharPut(UART1_BASE, ballY);
+  //IntMasterEnable();
 
   //Z Coordinate doesn't matter (is up or down)
-
+	
   if(ballY <= (TOPEDGE+RADIUS) || ballY >= (BOTTOMEDGE-RADIUS))
     dy = 0;     //Instead of bouncing off, just change y-direction to 0
   if(ballX >= (RIGHTEDGE-RADIUS) || ballX <= (LEFTEDGE+RADIUS))
@@ -572,10 +577,12 @@ int main (void)
 	ROM_GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_6);
   ROM_GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_7);
   ROM_GPIOPadConfigSet(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_STRENGTH_8MA, GPIO_PIN_TYPE_STD_WPU);    
+	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+	ROM_GPIOPinTypeGPIOOutput(GPIO_PORTF_BASE, GPIO_PIN_1);
+  ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, GPIO_PIN_1);
 	
-  //Configure chosen pin for interrupts
+	//Configure chosen pin for interrupts
   ROM_GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_7, GPIO_FALLING_EDGE); //INT is rising or falling edge? ); 
-	
   //Enable interrupts (on pin, port, and master)
   GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_7);
   ROM_IntEnable(INT_GPIOB); 
@@ -597,15 +604,17 @@ int main (void)
 
   //Set sampling rate for accelerometer to 64 MHz
   //Begin by sending Sample Rate Register (0x08)
+	ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, false);
 	ROM_I2CMasterDataPut(I2C0_BASE, 0x08); 
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
   I2CMBusyLoop();
 		
 	//Then configure it for 64 MHz (001 in the lowest 3 bits)
-  ROM_I2CMasterDataPut(I2C0_BASE, 0x00); //0x61 Sampling Rate
+  ROM_I2CMasterDataPut(I2C0_BASE, 0x61); //0x61 Sampling Rate
   ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
 	I2CMBusyLoop();
 	
+	ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, false);
 	ROM_I2CMasterDataPut(I2C0_BASE, 0x06); //Int Mode Register
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
 	I2CMBusyLoop();
@@ -614,6 +623,7 @@ int main (void)
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
 	I2CMBusyLoop();
 	
+	ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, false);
 	ROM_I2CMasterDataPut(I2C0_BASE, 0x07); //Mode Register
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
 	I2CMBusyLoop();
@@ -621,16 +631,6 @@ int main (void)
 	ROM_I2CMasterDataPut(I2C0_BASE, 0x01);
 	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_FINISH);
 	I2CMBusyLoop();
-	/*
-	ROM_I2CMasterDataPut(I2C0_BASE, 0x04);
-	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_BURST_SEND_START);
-	I2CMBusyLoop();
-	
-	ROM_I2CMasterControl(I2C0_BASE, I2C_MASTER_CMD_SINGLE_RECEIVE);
-	I2CMBusyLoop();
-  y = ROM_I2CMasterDataGet(I2C0_BASE);
-	UARTprintf("Y Value: %u", y);
-	*/
 	
 	UARTprintf("Configuration Done\n");
 	
@@ -638,24 +638,59 @@ int main (void)
   while(1)
 	{
 		//ROM_SysCtlSleep();
-    if(flag == 1 && (ticks % 50 == 0)) {
-			//xyz now hold 32 bit unsigned integers, need to convert to int8_t
-      //0000_0000_0000_0000_0000_0000_uasx_xxxx
-      xs = x << 24; //Now 8 bit int
-      int8_t xt = xs << 2;
+		/*if (GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_7) != 0){
+			UARTprintf("Interupt Active\n");
+		}*/
+			if(ticks % 50 == 0) {
+				if (!ROM_GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_1)) 
+					ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, GPIO_PIN_1);
+				else
+					ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
+			}
+		
+			if(flag == 1 && (ticks % 50 == 0)) {
+			uint8_t xt = x << 2;
       xt = xt >> 7; //XT holds the sign bit
-      uint8_t xq = xs << 3;
+      uint8_t xq = x << 3;
       xq = xq >> 3; //Shift off the top 3 bits, now contains ONLY the value, not the sign.
  
-			if(xt < 0)
-				xf = xq * -1;
+			if(xt == 1) {
+				xf = xq - 1;
+				xf = (~xf);
+			}
+			else
+				xf = xq;
+			
+			uint8_t yt = y << 2;
+      yt = yt >> 7; //XT holds the sign bit
+      uint8_t yq = y << 3;
+      yq = yq >> 3; //Shift off the top 3 bits, now contains ONLY the value, not the sign.
+ 
+			if(yt == 1) {
+				yf = yq - 1;
+				yf = (~yf);
+			}
+			else
+				yf = yq;
+			
+			uint8_t zt = z << 2;
+      zt = zt >> 7; //XT holds the sign bit
+      uint8_t zq = z << 3;
+      zq = zq >> 3; //Shift off the top 3 bits, now contains ONLY the value, not the sign.
+ 
+			if(zt == 1) {
+				zf = zq - 1;
+				zf = (~zf);
+			}
+			else
+				zf = zq;
+			
 			UARTprintf("Read X Register: %d\n", x); 
-			UARTprintf("Converted 8-Bit X: %d\n", xs);
-      UARTprintf("X's Sign Bit: %d\n", xt);
-      UARTprintf("X's Data: %d\n", xq);
-			UARTprintf("X's Final Data: %d\n\n", xf);
-      UARTprintf("Y Value: %d\n", y);
-			UARTprintf("Z Value: %d\n\n", z); //These should be in range of -32 < x < 31
+			UARTprintf("X's Sign Bit: %d\n", xt);
+      UARTprintf("X's Data: %d\n\n", xq);
+			UARTprintf("X's Final Value: %d\n", xf);
+      UARTprintf("Y's Final Value: %d\n", yf);
+			UARTprintf("Z's Final Value: %d\n\n", zf); //These should be in range of -32 < x < 31
 
       updateBall();
 			flag = 0;
