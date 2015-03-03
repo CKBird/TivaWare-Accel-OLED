@@ -648,7 +648,7 @@ int main (void)
 					ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
 			}
 		
-			if(flag == 1 && (ticks % 50 == 0)) {
+			if(flag == 1 && (ticks % 5 == 0)) {
 			uint8_t xt = x << 2;
       xt = xt >> 7; //XT holds the sign bit
       uint8_t xq = x << 3;
