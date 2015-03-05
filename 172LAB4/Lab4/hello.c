@@ -79,7 +79,7 @@ uint8_t ballY2;
 #define BOTTOMEDGE    127
 #define LEFTEDGE      0
 #define RIGHTEDGE     127
-#define RADIUS        2
+#define RADIUS        1
 volatile int dx = 0;      //X Direction
 volatile int dy = 0;      //Y Direction
 
@@ -230,28 +230,36 @@ void updateBall (void) {
   if(pxArr[ballX][ballY+RADIUS] || ballY <= (TOPEDGE+RADIUS)) { //Ball hits a vertical wall
     dy = 0;
 		ballY += 1;
-		fillCircle(ballX, ballY, RADIUS, BLACK);
+		//fillCircle(ballX, ballY, RADIUS, BLACK);
 	}
 	else if(pxArr[ballX][ballY-RADIUS] || ballY >= (BOTTOMEDGE-RADIUS)) {
 		dy = 0;
 		ballY -= 1;
-		fillCircle(ballX, ballY, RADIUS, BLACK);
+		//fillCircle(ballX, ballY, RADIUS, BLACK);
 	}
+	else if (yf > 0)
+		dy = 1;
+	else if (yf < 0)
+		dy = -1;
 	else
-		dy = (yf/5);
+		dy = 0;
 	
   if(pxArr[ballX+RADIUS][ballY] || ballX >= (RIGHTEDGE-RADIUS)) {//Ball hits a horizontal wall
     dx = 0;
 		ballX -= 1;
-		fillCircle(ballX, ballY, RADIUS, BLACK);
+		//fillCircle(ballX, ballY, RADIUS, BLACK);
 	}
 	else if(pxArr[ballX-RADIUS][ballY] || ballX <= (LEFTEDGE+RADIUS)) {
 		dx = 0;
 		ballX += 1;
-		fillCircle(ballX, ballY, RADIUS, BLACK);
+		//fillCircle(ballX, ballY, RADIUS, BLACK);
 	}
+	else if (xf > 0)
+		dx = -1;
+	else if (xf < 0)
+		dx = 1;
 	else
-		dx = -1 * (xf/5);
+		dx = 0;
 
 }
 
