@@ -75,13 +75,23 @@ int ballY = 5;
 uint8_t ballX2;
 uint8_t ballY2;
 //Variables for determining screen, paddle, and ball boundaries
-#define TOPEDGE       1
+#define TOPEDGE       0
 #define BOTTOMEDGE    127
-#define LEFTEDGE      1
+#define LEFTEDGE      0
 #define RIGHTEDGE     127
 #define RADIUS        1
 volatile int dx = 0;      //X Direction
 volatile int dy = 0;      //Y Direction
+
+//Ball Variables
+//WE WILL ASSUME THAT -32 < X < 31
+//''        ''        -32 < Y < 31
+//If value is < 0, ball rolls left
+//If value is > 0, ball rolls right
+int BALLX = 64;  //X-Coord
+int BALLY = 64;  //Y-Coord
+//int dx = 0;      //X Direction
+//int dy = 0;      //Y Direction
 
 //Maze Walls
 bool pxArr[128][128];
@@ -207,6 +217,7 @@ void updateBall (void) {
   //Update coordinates and draw new ball
   ballX += dx;
   ballY += dy;
+  fillCircle(ballX, ballY, RADIUS, WHITE);
 
   //IntMasterDisable();
   //ROM_UARTCharPut(UART1_BASE, 'c');
@@ -215,27 +226,13 @@ void updateBall (void) {
   //IntMasterEnable();
 
   //Z Coordinate doesn't matter (is up or down)
-
-  //We can remove the need for bouncing if we replace all RADIUS with RADIUS+1
       
-	if( pxArr[ballX][ballY+RADIUS] || //Center of a ball contacts wall
-		  pxArr[ballX-1][ballY+RADIUS] || //Center -1 contacts
-		  pxArr[ballX+1][ballY+RADIUS] || //Center +1 contacts
-		  pxArr[ballX-2][ballY+RADIUS-1] ||
-		  pxArr[ballX+2][ballY+RADIUS-1] ||
-		  ballY <= (TOPEDGE+RADIUS)) 
-	{ //Ball hits a vertical wall
-		dy = 0;
+  if(pxArr[ballX][ballY+RADIUS] || ballY <= (TOPEDGE+RADIUS)) { //Ball hits a vertical wall
+    dy = 0;
 		ballY += 1;
 		//fillCircle(ballX, ballY, RADIUS, BLACK);
 	}
-	else if(  pxArr[ballX][ballY-RADIUS] ||
-		        pxArr[ballX-1][ballY-RADIUS] ||
-		        pxArr[ballX+1][ballY-RADIUS] ||
-		        pxArr[ballX-2][ballY-RADIUS+1] ||
-		        pxArr[ballX+2][ballY-RADIUS+1] ||
-		        ballY >= (BOTTOMEDGE-RADIUS)) 
-	{
+	else if(pxArr[ballX][ballY-RADIUS] || ballY >= (BOTTOMEDGE-RADIUS)) {
 		dy = 0;
 		ballY -= 1;
 		//fillCircle(ballX, ballY, RADIUS, BLACK);
@@ -247,37 +244,22 @@ void updateBall (void) {
 	else
 		dy = 0;
 	
-	if(pxArr[ballX+RADIUS][ballY] || 
-		pxArr[ballX+RADIUS][ballY-1] ||
-		pxArr[ballX+RADIUS][ballY+1] ||
-		pxArr[ballX+RADIUS-1][ballY-2] ||
-		pxArr[ballX+RADIUS-1][ballY+2] ||
-		ballX >= (RIGHTEDGE-RADIUS)) 
-	{//Ball hits a horizontal wall
-		dx = 0;
+  if(pxArr[ballX+RADIUS][ballY] || ballX >= (RIGHTEDGE-RADIUS)) {//Ball hits a horizontal wall
+    dx = 0;
 		ballX -= 1;
 		//fillCircle(ballX, ballY, RADIUS, BLACK);
 	}
-	else if(pxArr[ballX-RADIUS][ballY] || 
-		pxArr[ballX-RADIUS][ballY-1] ||
-		pxArr[ballX-RADIUS][ballY+1] ||
-		pxArr[ballX-RADIUS+1][ballY-2] ||
-		pxArr[ballX-RADIUS+1][ballY+2] ||
-		ballX <= (LEFTEDGE+RADIUS)) 
-	{
+	else if(pxArr[ballX-RADIUS][ballY] || ballX <= (LEFTEDGE+RADIUS)) {
 		dx = 0;
 		ballX += 1;
 		//fillCircle(ballX, ballY, RADIUS, BLACK);
 	}
 	else if (xf > 0)
-		dx = 1;
-	else if (xf < 0)
 		dx = -1;
+	else if (xf < 0)
+		dx = 1;
 	else
 		dx = 0;
-
-	//Draw ball only after all bouncing is done, should fix erasing problem
-	fillCircle(ballX, ballY, RADIUS, WHITE);
 
 }
 
@@ -730,6 +712,7 @@ int main (void)
   drawLine( VW15,  VW15L,  VW15,   127,  WHITE);
   drawLine( VW16,  VW16L,  VW16,   127,  WHITE);
 
+	UARTprintf("Test2");
   //DRAW HORIZONTAL LINES
   drawLine( HW1L,  HW1,  60,   HW1 ,  WHITE);
   drawLine( HW2L,  HW2,  95,   HW2 ,  WHITE);
@@ -748,6 +731,9 @@ int main (void)
   drawLine( HW15L, HW15, 75,   HW15 , WHITE);
   drawLine( HW16L, HW16, 30,   HW16 , WHITE);
   drawLine( HW17L, HW17, 90,   HW17 , WHITE);
+	
+	UARTprintf("Test3");
+
 
   //Set sampling rate for accelerometer to 64 MHz
   //Begin by sending Sample Rate Register (0x08)
@@ -780,24 +766,17 @@ int main (void)
   I2CMBusyLoop();
   
   UARTprintf("Configuration Done\n");
-	
-	/*for(int i = 0; i < 128; i++) {
-		for(int j = 0; j < 128; j++) {
-			UARTprintf("%d", pxArr[i][j]);
-		}
-		UARTprintf("\n");
-	}*/
   	
 	//ROM_IntMasterEnable();
   while(1)
 	{
-    /*if(ticks % 50 == 0) 
+    if(ticks % 50 == 0) 
     {
       if (!ROM_GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_1)) 
         ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, GPIO_PIN_1);
       else
         ROM_GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_1, 0);
-    }*/
+    }
 		//ROM_SysCtlSleep();
     if(flag == 1 && (ticks % 5 == 0)) 
     {

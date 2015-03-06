@@ -189,13 +189,14 @@ void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) {
     if (steep) 
     {
       drawPixel(y0, x0, color);
+			pxArr[x0][y0] = true;
     } 
     else 
     {
       drawPixel(x0, y0, color);
+			pxArr[y0][x0] = true;
     }
     err -= dy;
-		pxArr[x0][y0] = true;
     if (err < 0) {
       y0 += ystep;
       err += dx;
