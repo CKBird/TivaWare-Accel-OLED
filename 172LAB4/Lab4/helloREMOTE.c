@@ -47,6 +47,7 @@
 #define DEFAULTY 5
 #define DEFAULTX1 0
 #define DEFAULTY1 69
+#define RADIUS 4
 
 #define SLAVE_ADDRESS 0x4C
 
@@ -69,8 +70,8 @@ volatile int ticks = 0;
 //''        ''        -32 < Y < 31
 //If value is < 0, ball rolls left
 //If value is > 0, ball rolls right
-volatile int BALLX = 64;  //X-Coord
-volatile int BALLY = 64;  //Y-Coord
+volatile int ballX = 64;  //X-Coord
+volatile int ballY = 64;  //Y-Coord
 volatile int dx = 0;      //X Direction
 volatile int dy = 0;      //Y Direction
 
@@ -225,6 +226,22 @@ void ConfigureUART0(void)// Same as ConfigureUART()
     UARTClockSourceSet(UART0_BASE, UART_CLOCK_PIOSC);
 
     UARTStdioConfig(0, 9600, 16000000);
+}
+
+void ConfigureUART1(void) //Configure UART for Tx/Rx functionality
+{
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); //UART Pin B
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
+
+    ROM_GPIOPinConfigure(GPIO_PB0_U1RX); //Pin MUX (In/Out)
+    ROM_GPIOPinConfigure(GPIO_PB1_U1TX);
+    GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+    
+    UARTClockSourceSet(UART1_BASE, UART_CLOCK_PIOSC);
+
+    ROM_UARTConfigSetExpClk(UART1_BASE, 16000000, 9600,
+                            (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                             UART_CONFIG_PAR_NONE));
 }
 
 void ConfigureSSI (void) {
@@ -586,10 +603,13 @@ int main (void)
   ROM_IntMasterEnable();
   
 	ConfigureUART0();
+  ConfigureUART1();
 	UARTprintf("System Boot...\n");
   ConfigureSSI();
   //ConfigureI2C();
   begin(); //Initializes the OLED for use
+	ROM_IntEnable(INT_UART1);
+  ROM_UARTIntEnable(UART1_BASE, UART_INT_RX | UART_INT_RT); 
 	//setup(); //Runs the tests
   
 	lcdTestPattern();
@@ -643,50 +663,7 @@ int main (void)
 	//ROM_IntMasterEnable();
   while(1)
 	{
-    //Do nothing until UART1 int is received, then update ball.
 		ROM_SysCtlSleep();
-    /*if(flag == 1 && (ticks % 50 == 0)) {
-			x = x << 2;
-			y = y << 2;
-			z = z << 2;
-			
-			x = x >> 2;
-			y = y >> 2;
-			z = z >> 2; //These 6 ops cut off top 2 bits of all inputs
-
-      int a = x >> 5;
-      int b = y >> 5;
-      int c = z >> 5; //abc hold only the x[5], y[5], z[5] for sign
-
-			x = x - 1;
-			y = y - 1;
-			z = z - 1;
-			
-			x = ~x;
-			y = ~y; //int -> 2s comp is done by inversing and adding one
-			z = ~z; //2s -> int is done by subtracting one then inversing
-
-      //Normalize values here based on flat setting.
-      //After getting values, normalize to (0, 0, 1.5)
-
-      x = x - Some Value;
-      y = y - Some Value;
-      z = z + Same Value; //Determine "some value" based on flat table readings
-
-      if(a == 1)
-        x = x * -1;
-      if(b == 1)
-        y = y * -1;      
-      if(c == 1)
-        z = z * -1; //Change based on sign
-
-			UARTprintf("X Value: %d\n", x);
-			UARTprintf("Y Value: %d\n", y);
-			UARTprintf("Z Value: %d\n", z); //These should be in range of -32 < x < 31
-
-      updateBall();
-			flag = 0;
-      */
-		}
-  }
+    //Do nothing until UART1 int is received, then update ball. 
+	}
 }

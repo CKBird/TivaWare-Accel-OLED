@@ -79,7 +79,7 @@ uint8_t ballY2;
 #define BOTTOMEDGE    127
 #define LEFTEDGE      1
 #define RIGHTEDGE     127
-#define RADIUS        1
+#define RADIUS        2
 volatile int dx = 0;      //X Direction
 volatile int dy = 0;      //Y Direction
 
@@ -198,87 +198,6 @@ void ConfigureI2C() {
   //Set up master and slave
   ROM_I2CMasterInitExpClk(I2C0_BASE, SysCtlClockGet(), true);
   //ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, true);
-}
-
-void updateBall (void) {
-  //Erase old ball
-  fillCircle(ballX, ballY, RADIUS, BLACK);
-	
-  //Update coordinates and draw new ball
-  ballX += dx;
-  ballY += dy;
-
-  //IntMasterDisable();
-  //ROM_UARTCharPut(UART1_BASE, 'c');
-  //ROM_UARTCharPut(UART1_BASE, ballX);
-  //ROM_UARTCharPut(UART1_BASE, ballY);
-  //IntMasterEnable();
-
-  //Z Coordinate doesn't matter (is up or down)
-
-  //We can remove the need for bouncing if we replace all RADIUS with RADIUS+1
-      
-	if( pxArr[ballX][ballY+RADIUS] || //Center of a ball contacts wall
-		  pxArr[ballX-1][ballY+RADIUS] || //Center -1 contacts
-		  pxArr[ballX+1][ballY+RADIUS] || //Center +1 contacts
-		  pxArr[ballX-2][ballY+RADIUS-1] ||
-		  pxArr[ballX+2][ballY+RADIUS-1] ||
-		  ballY <= (TOPEDGE+RADIUS)) 
-	{ //Ball hits a vertical wall
-		dy = 0;
-		ballY += 1;
-		//fillCircle(ballX, ballY, RADIUS, BLACK);
-	}
-	else if(  pxArr[ballX][ballY-RADIUS] ||
-		        pxArr[ballX-1][ballY-RADIUS] ||
-		        pxArr[ballX+1][ballY-RADIUS] ||
-		        pxArr[ballX-2][ballY-RADIUS+1] ||
-		        pxArr[ballX+2][ballY-RADIUS+1] ||
-		        ballY >= (BOTTOMEDGE-RADIUS)) 
-	{
-		dy = 0;
-		ballY -= 1;
-		//fillCircle(ballX, ballY, RADIUS, BLACK);
-	}
-	else if (yf > 0)
-		dy = 1;
-	else if (yf < 0)
-		dy = -1;
-	else
-		dy = 0;
-	
-	if(pxArr[ballX+RADIUS][ballY] || 
-		pxArr[ballX+RADIUS][ballY-1] ||
-		pxArr[ballX+RADIUS][ballY+1] ||
-		pxArr[ballX+RADIUS-1][ballY-2] ||
-		pxArr[ballX+RADIUS-1][ballY+2] ||
-		ballX >= (RIGHTEDGE-RADIUS)) 
-	{//Ball hits a horizontal wall
-		dx = 0;
-		ballX -= 1;
-		//fillCircle(ballX, ballY, RADIUS, BLACK);
-	}
-	else if(pxArr[ballX-RADIUS][ballY] || 
-		pxArr[ballX-RADIUS][ballY-1] ||
-		pxArr[ballX-RADIUS][ballY+1] ||
-		pxArr[ballX-RADIUS+1][ballY-2] ||
-		pxArr[ballX-RADIUS+1][ballY+2] ||
-		ballX <= (LEFTEDGE+RADIUS)) 
-	{
-		dx = 0;
-		ballX += 1;
-		//fillCircle(ballX, ballY, RADIUS, BLACK);
-	}
-	else if (xf > 0)
-		dx = 1;
-	else if (xf < 0)
-		dx = -1;
-	else
-		dx = 0;
-
-	//Draw ball only after all bouncing is done, should fix erasing problem
-	fillCircle(ballX, ballY, RADIUS, WHITE);
-
 }
 
 void updateDraw(void)
@@ -668,6 +587,94 @@ void setup(void) {
   ROM_SysCtlDelay(SysCtlClockGet()/3); //delay(1000);
 }
 
+void updateBall (void) {
+  //Erase old ball
+  fillCircle(ballX, ballY, RADIUS, BLACK);
+	
+  //Update coordinates and draw new ball
+  ballX += dx;
+  ballY += dy;
+
+  //IntMasterDisable();
+  //ROM_UARTCharPut(UART1_BASE, 'c');
+  //ROM_UARTCharPut(UART1_BASE, ballX);
+  //ROM_UARTCharPut(UART1_BASE, ballY);
+  //IntMasterEnable();
+
+  //Z Coordinate doesn't matter (is up or down)
+
+  //We can remove the need for bouncing if we replace all RADIUS with RADIUS+1
+      
+	if( pxArr[ballX][ballY-RADIUS-2] || //Center of a ball contacts wall
+		  pxArr[ballX-1][ballY-RADIUS-2] || //Center -1 contacts
+		  pxArr[ballX+1][ballY-RADIUS-2] || //Center +1 contacts
+		  pxArr[ballX-2][ballY-RADIUS-1] ||
+		  pxArr[ballX+2][ballY-RADIUS-1] ||
+		  ballY <= (TOPEDGE+RADIUS+1)) 
+	{ //Ball hits a horiz wall from the bottom
+		dy = 0;
+		ballY += 1;
+		//fillCircle(ballX, ballY, RADIUS, BLACK);
+	}
+	else if(  pxArr[ballX][ballY+RADIUS+1] ||
+		        pxArr[ballX-1][ballY+RADIUS+1] ||
+		        pxArr[ballX+1][ballY+RADIUS+1] ||
+		        pxArr[ballX-2][ballY+RADIUS+2] ||
+		        pxArr[ballX+2][ballY+RADIUS+2] ||
+		        ballY >= (BOTTOMEDGE-RADIUS-1)) 
+	{
+		dy = 0;
+		ballY -= 1;
+		//fillCircle(ballX, ballY, RADIUS, BLACK);
+	}
+	else if (yf > 0)
+		dy = 1;
+	else if (yf < 0)
+		dy = -1;
+	else
+		dy = 0;
+	
+	if(pxArr[ballX+RADIUS+1][ballY] || 
+		pxArr[ballX+RADIUS+1][ballY-1] ||
+		pxArr[ballX+RADIUS+1][ballY+1] ||
+		pxArr[ballX+RADIUS][ballY-2] ||
+		pxArr[ballX+RADIUS][ballY+2] ||
+		ballX >= (RIGHTEDGE-RADIUS+1)) 
+	{//Ball hits a vert wall
+		dx = 0;
+		ballX -= 1;
+		//fillCircle(ballX, ballY, RADIUS, BLACK);
+	}
+	else if(pxArr[ballX-RADIUS-1][ballY] || 
+		pxArr[ballX-RADIUS-1][ballY-1] ||
+		pxArr[ballX-RADIUS-1][ballY+1] ||
+		pxArr[ballX-RADIUS-2][ballY-2] ||
+		pxArr[ballX-RADIUS-2][ballY+2] ||
+		ballX <= (LEFTEDGE+RADIUS+1)
+		) 
+	{
+		dx = 0;
+		ballX += 1;
+		//fillCircle(ballX, ballY, RADIUS, BLACK);
+	}
+	else if (xf > 0)
+		dx = -1;
+	else if (xf < 0)
+		dx = 1;
+	else
+		dx = 0;
+
+	if(ballX == 20 && ballY == 5)
+	{
+		fillScreen(BLACK);
+		testdrawtext("You Win!!", GREEN);
+	}
+	
+	//Draw ball only after all bouncing is done, should fix erasing problem
+	fillCircle(ballX, ballY, RADIUS, WHITE);
+
+}
+
 int main (void) 
 {
 	ROM_SysCtlClockSet(SYSCTL_SYSDIV_4 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ | SYSCTL_OSC_MAIN);
@@ -727,7 +734,7 @@ int main (void)
   drawLine( VW12,  VW12L,  VW12,   100,  WHITE);
   drawLine( VW13,  VW13L,  VW13,   127,  WHITE);
   drawLine( VW14,  VW14L,  VW14,   55,   WHITE);
-  drawLine( VW15,  VW15L,  VW15,   127,  WHITE);
+  drawLine( VW15,  VW15L,  VW15,   110,  WHITE);
   drawLine( VW16,  VW16L,  VW16,   127,  WHITE);
 
   //DRAW HORIZONTAL LINES
@@ -748,7 +755,9 @@ int main (void)
   drawLine( HW15L, HW15, 75,   HW15 , WHITE);
   drawLine( HW16L, HW16, 30,   HW16 , WHITE);
   drawLine( HW17L, HW17, 90,   HW17 , WHITE);
-
+	fillCircle(20, 5, RADIUS, RED);
+	fillCircle(ballX, ballY, RADIUS, WHITE);
+	
   //Set sampling rate for accelerometer to 64 MHz
   //Begin by sending Sample Rate Register (0x08)
   ROM_I2CMasterSlaveAddrSet(I2C0_BASE, SLAVE_ADDRESS, false);
@@ -780,8 +789,8 @@ int main (void)
   I2CMBusyLoop();
   
   UARTprintf("Configuration Done\n");
-	
-	/*for(int i = 0; i < 128; i++) {
+	/*
+	for(int i = 0; i < 128; i++) {
 		for(int j = 0; j < 128; j++) {
 			UARTprintf("%d", pxArr[i][j]);
 		}

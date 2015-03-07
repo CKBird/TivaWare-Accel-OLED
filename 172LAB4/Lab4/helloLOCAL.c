@@ -168,11 +168,11 @@ void updateBall (void) {
   ballY += dy;
   fillCircle(ballX, ballY, RADIUS, WHITE);
 
-  //IntMasterDisable();
-  //ROM_UARTCharPut(UART1_BASE, 'c');
-  //ROM_UARTCharPut(UART1_BASE, ballX);
-  //ROM_UARTCharPut(UART1_BASE, ballY);
-  //IntMasterEnable();
+  IntMasterDisable();
+  ROM_UARTCharPut(UART1_BASE, 'c');
+  ROM_UARTCharPut(UART1_BASE, ballX);
+  ROM_UARTCharPut(UART1_BASE, ballY);
+  IntMasterEnable();
 
   //Z Coordinate doesn't matter (is up or down)
 	
@@ -226,6 +226,22 @@ void ConfigureUART0(void)// Same as ConfigureUART()
     UARTClockSourceSet(UART0_BASE, UART_CLOCK_PIOSC);
 
     UARTStdioConfig(0, 9600, 16000000);
+}
+
+void ConfigureUART1(void) //Configure UART for Tx/Rx functionality
+{
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB); //UART Pin B
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
+
+    ROM_GPIOPinConfigure(GPIO_PB0_U1RX); //Pin MUX (In/Out)
+    ROM_GPIOPinConfigure(GPIO_PB1_U1TX);
+    GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+    
+    UARTClockSourceSet(UART1_BASE, UART_CLOCK_PIOSC);
+
+    ROM_UARTConfigSetExpClk(UART1_BASE, 16000000, 9600,
+                            (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                             UART_CONFIG_PAR_NONE));
 }
 
 void ConfigureSSI (void) {
@@ -589,6 +605,7 @@ int main (void)
   ROM_IntMasterEnable();
   
 	ConfigureUART0();
+  ConfigureUART1();
 	UARTprintf("System Boot...\n");
   ConfigureSSI();
   ConfigureI2C();
